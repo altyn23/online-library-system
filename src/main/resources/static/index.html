@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="kk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Online Library System</title>
+  <style>
+    body { font-family: -apple-system, system-ui, Arial; margin: 0; background: #0b1220; color: #eaf0ff; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 28px 18px; }
+    .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10); border-radius: 16px; padding: 18px; }
+    .top { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+    h1 { font-size: 22px; margin: 0; }
+    .muted { color: rgba(234,240,255,0.7); font-size: 14px; margin-top: 6px; }
+    input { width: 260px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(0,0,0,0.25); color: #eaf0ff; }
+    button { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.10); color: #eaf0ff; cursor: pointer; }
+    button:hover { background: rgba(255,255,255,0.16); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 16px; }
+    .book { padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.04); }
+    .title { font-weight: 700; }
+    .meta { margin-top: 6px; font-size: 13px; color: rgba(234,240,255,0.75); }
+    .bar { display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
+    .status { margin-top: 10px; font-size: 13px; color: rgba(234,240,255,0.75); }
+    a { color: #9bd2ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div>
+          <h1>📚 Online Library System</h1>
+          <div class="muted">Spring Boot + Git Branch demo (API + mini UI)</div>
+        </div>
+        <div class="bar">
+          <input id="q" placeholder="Іздеу (title/author)..." />
+          <button id="refresh">Жаңарту</button>
+          <button id="openApi">/books API</button>
+        </div>
+      </div>
+
+      <div id="status" class="status">Жүктелуде...</div>
+      <div id="grid" class="grid"></div>
+    </div>
+  </div>
+
+<script>
+  const grid = document.getElementById('grid');
+  const statusEl = document.getElementById('status');
+  const q = document.getElementById('q');
+
+  let all = [];
+
+  function render(list) {
+    grid.innerHTML = "";
+    if (!list.length) {
+      grid.innerHTML = `<div class="muted">Ештеңе табылмады 😅</div>`;
+      return;
+    }
+    for (const b of list) {
+      const el = document.createElement('div');
+      el.className = 'book';
+      el.innerHTML = `
+        <div class="title">${escapeHtml(b.title)}</div>
+        <div class="meta">Автор: ${escapeHtml(b.author)} • Жыл: ${b.year}</div>
+      `;
+      grid.appendChild(el);
+    }
+  }
+
+  function filterNow() {
+    const term = q.value.trim().toLowerCase();
+    const filtered = term
+      ? all.filter(b => (b.title + " " + b.author).toLowerCase().includes(term))
+      : all;
+    render(filtered);
+    statusEl.textContent = `Кітап саны: ${filtered.length} / ${all.length}`;
+  }
+
+  async function load() {
+    statusEl.textContent = "API-дан алу...";
+    const res = await fetch('/books');
+    all = await res.json();
+    filterNow();
+  }
+
+  document.getElementById('refresh').addEventListener('click', load);
+  document.getElementById('openApi').addEventListener('click', () => window.open('/books', '_blank'));
+  q.addEventListener('input', filterNow);
+
+  function escapeHtml(s) {
+    return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  }
+
+  load().catch(err => statusEl.textContent = "Қате: " + err.message);
+</script>
+</body>
+</html>
